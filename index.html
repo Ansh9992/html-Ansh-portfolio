@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ansh Thakur | Animated 3D Portfolio</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter & Space Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- Base & Theme --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #000000;
+            color: #e0e0e0;
+            overflow-x: hidden;
+            cursor: none; /* Use custom crosshair globally */
+        }
+
+        /* --- Spaceship Loader Screen --- */
+        #loader-wrapper {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000000;
+            z-index: 10002;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 1s ease-in-out;
+            overflow: hidden;
+        }
+        #loader-wrapper.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .starfield {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .star {
+            position: absolute;
+            background-color: white;
+            border-radius: 50%;
+            animation: move-star linear infinite;
+        }
+        @keyframes move-star {
+            from { transform: translateY(-100px); }
+            to { transform: translateY(100vh); }
+        }
+        #spaceship {
+            width: 100px;
+            height: 150px;
+            position: relative;
+            animation: enter-ship 2s ease-out forwards, hover-ship 2s 2s infinite ease-in-out;
+        }
+        #spaceship.exit {
+            animation: exit-ship 1s ease-in forwards;
+        }
+        .ship-body {
+            width: 100px;
+            height: 120px;
+            background: linear-gradient(to top, #c0c0c0, #f0f0f0);
+            border-radius: 50% 50% 10% 10% / 80% 80% 20% 20%;
+            position: relative;
+            z-index: 2;
+            border: 2px solid #a0a0a0;
+        }
+        .cockpit {
+            width: 50px;
+            height: 40px;
+            background: linear-gradient(to top, #00d4ff, #005f73);
+            border-radius: 50%;
+            position: absolute;
+            top: 20px;
+            left: 25px;
+            border: 2px solid #a78bfa;
+        }
+        .wing {
+            width: 40px;
+            height: 80px;
+            background-color: #b0b0b0;
+            position: absolute;
+            bottom: 10px;
+            z-index: 1;
+            border-radius: 10px;
+        }
+        .left-wing {
+            left: -30px;
+            transform: skewY(20deg);
+        }
+        .right-wing {
+            right: -30px;
+            transform: skewY(-20deg);
+        }
+        .engine-flame {
+            width: 20px;
+            height: 0px;
+            background: linear-gradient(to bottom, #ff4d00, #ffcc00);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            position: absolute;
+            bottom: -10px;
+            left: 40px;
+            animation: flame-flicker 0.1s infinite;
+        }
+        @keyframes enter-ship {
+            from { transform: translateY(-100vh) scale(0.2); }
+            to { transform: translateY(0) scale(1); }
+        }
+        @keyframes hover-ship {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-15px); }
+        }
+        @keyframes exit-ship {
+            from { transform: scale(1); opacity: 1; }
+            to { transform: scale(5) translateY(-100vh); opacity: 0; }
+        }
+        @keyframes flame-flicker {
+            0%, 100% { height: 40px; opacity: 1; }
+            50% { height: 50px; opacity: 0.8; }
+        }
+
+        /* --- Canvas Layers --- */
+        #galaxy-bg-canvas, #helmet-bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -2;
+        }
+        #helmet-bg-canvas {
+            z-index: -1;
+        }
+
+        /* --- Content & Glass Effects --- */
+        .content-section {
+            position: relative;
+            z-index: 1;
+            padding: 100px 0;
+        }
+        .glass-surface {
+            background: rgba(10, 10, 20, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(136, 78, 246, 0.2);
+            border-radius: 1.5rem;
+        }
+        .glass-surface-nav {
+             background: rgba(10, 10, 20, 0.6);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(136, 78, 246, 0.2);
+            border-radius: 999px;
+            padding: 0.5rem 1rem;
+        }
+
+        /* --- Navigation --- */
+        .nav-link {
+            position: relative;
+            transition: all 0.3s ease;
+            color: #a7a7a7;
+            padding: 8px 16px;
+            border-radius: 999px;
+        }
+        .nav-link:hover, .nav-link.active {
+            color: #fff;
+            background: rgba(167, 139, 250, 0.15);
+        }
+
+        /* --- Typewriter Text --- */
+        .typewriter-container p[data-text] {
+            font-family: 'Space Mono', monospace;
+            letter-spacing: .1em;
+            word-break: break-word; /* Ensure long words don't overflow */
+            min-height: 1.5em; /* Prevent layout shift while empty */
+        }
+        
+        .is-typing {
+            display: inline; /* Display as inline to allow the cursor to be at the end of the text */
+            border-right: .15em solid #a78bfa;
+            animation: blink-caret .75s step-end infinite;
+        }
+
+        @keyframes blink-caret {
+            from, to { border-color: transparent }
+            50% { border-color: #a78bfa; }
+        }
+
+        /* --- Skills Section: Falling Text --- */
+        #skills-container {
+            position: relative;
+            height: 500px;
+            overflow: hidden;
+            margin-top: 2rem;
+        }
+        .skill-tag {
+            position: absolute;
+            color: #a78bfa;
+            background: rgba(167, 139, 250, 0.1);
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 1rem;
+            cursor: grab;
+            user-select: none;
+            border: 1px solid rgba(167, 139, 250, 0.3);
+            animation: fall linear forwards;
+        }
+        @keyframes fall {
+            to { transform: translateY(550px); }
+        }
+
+        /* --- Portfolio: Auto-Rolling Gallery --- */
+        #rolling-gallery-container {
+            overflow: hidden; /* Hide scrollbar, JS will handle scroll */
+        }
+        #rolling-gallery {
+            display: flex;
+            width: max-content;
+            gap: 1.5rem;
+            padding-bottom: 1.5rem;
+            animation: roll 60s linear infinite; /* Auto-scroll animation */
+        }
+        #rolling-gallery-container:hover #rolling-gallery {
+            animation-play-state: paused; /* Pause on hover */
+        }
+        @keyframes roll {
+            from { transform: translateX(0%); }
+            to { transform: translateX(-50%); } /* Adjust based on content width */
+        }
+        .project-card {
+            width: 350px;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        .project-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 0 40px rgba(136, 78, 246, 0.3);
+        }
+
+        /* --- Global Alien Elements --- */
+        #realistic-crosshair {
+            position: fixed;
+            width: 50px;
+            height: 50px;
+            pointer-events: none;
+            z-index: 10001;
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease-out;
+        }
+        #alien-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            pointer-events: none; /* Container doesn't block clicks */
+            z-index: 99; /* Below nav and crosshair */
+        }
+        .alien {
+            position: absolute;
+            width: 80px;
+            height: 80px;
+            cursor: none;
+            transition: transform 0.2s ease-out, opacity 0.5s ease;
+            will-change: transform;
+            pointer-events: all; /* Aliens are clickable */
+        }
+        .alien:hover {
+             filter: drop-shadow(0 0 15px #a78bfa);
+        }
+        .alien.shot {
+            animation: hit 0.5s ease-out forwards;
+            pointer-events: none;
+        }
+        @keyframes hit {
+            0% { transform: scale(1.1) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.5) rotate(15deg); opacity: 1; }
+            100% { transform: scale(0.1) rotate(-90deg) translateY(100px); opacity: 0; }
+        }
+        body.shake {
+            animation: screen-shake 0.3s ease-out;
+        }
+        @keyframes screen-shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            50% { transform: translateX(5px); }
+            75% { transform: translateX(-5px); }
+        }
+
+        /* --- Animated Gradient Text --- */
+        .animated-gradient-text {
+            background: linear-gradient(90deg, #a78bfa, #f472b6, #fbbf24, #34d399, #a78bfa);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 400% 400%;
+            animation: gradient-animation 8s ease infinite;
+        }
+        @keyframes gradient-animation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        /* --- Final Alien Boss --- */
+        #final-boss-container {
+            padding: 100px 0;
+            text-align: center;
+        }
+        #final-boss-alien {
+            opacity: 0;
+            transform: scale(0.5) rotate(-180deg);
+            transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            display: inline-block;
+            cursor: none;
+            pointer-events: all;
+        }
+        #final-boss-alien.show {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+        #final-boss-alien.shot {
+            animation: final-hit 0.7s ease-out forwards;
+        }
+        @keyframes final-hit {
+            0% { transform: scale(1) rotate(0deg); opacity: 1; }
+            25% { transform: scale(1.2) rotate(15deg); }
+            50% { transform: scale(0.8) rotate(-15deg); }
+            100% { transform: scale(5) rotate(0deg); opacity: 0; }
+        }
+
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Loading Screen -->
+    <div id="loader-wrapper">
+        <div class="starfield"></div>
+        <div id="spaceship">
+            <div class="ship-body">
+                <div class="cockpit"></div>
+            </div>
+            <div class="wing left-wing"></div>
+            <div class="wing right-wing"></div>
+            <div class="engine-flame"></div>
+        </div>
+    </div>
+
+    <!-- Custom Crosshair SVG -->
+    <svg id="realistic-crosshair" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="2" fill="#a78bfa"/>
+        <path d="M50,0 L50,35 M65,50 L100,50 M50,65 L50,100 M0,50 L35,50" stroke="#a78bfa" stroke-width="2"/>
+    </svg>
+
+    <!-- Global Alien Container -->
+    <div id="alien-container"></div>
+
+    <!-- Background Canvases -->
+    <canvas id="galaxy-bg-canvas"></canvas>
+    <canvas id="helmet-bg-canvas"></canvas>
+
+    <!-- Header & Navigation -->
+    <header class="fixed top-0 left-0 right-0 z-50 p-4">
+        <div class="container mx-auto max-w-7xl px-4">
+            <nav class="flex justify-between items-center">
+                <a href="#home" class="text-2xl font-bold tracking-tighter text-white">AT.</a>
+                <div class="hidden md:block glass-surface-nav">
+                    <ul class="flex items-center space-x-2">
+                        <li><a href="#about" class="nav-link font-medium">About</a></li>
+                        <li><a href="#skills" class="nav-link font-medium">Skills</a></li>
+                        <li><a href="#portfolio" class="nav-link font-medium">Portfolio</a></li>
+                        <li><a href="#contact" class="nav-link font-medium">Contact</a></li>
+                    </ul>
+                </div>
+                <button id="mobile-menu-button" class="md:hidden text-white focus:outline-none">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </nav>
+        </div>
+    </header>
+    
+    <!-- Mobile Menu -->
+    <div id="mobile-menu" class="hidden fixed inset-0 bg-black/95 z-40 md:hidden">
+        <ul class="flex flex-col items-center justify-center h-full space-y-8">
+            <li><a href="#about" class="nav-link text-3xl font-medium">About</a></li>
+            <li><a href="#skills" class="nav-link text-3xl font-medium">Skills</a></li>
+            <li><a href="#portfolio" class="nav-link text-3xl font-medium">Portfolio</a></li>
+            <li><a href="#contact" class="nav-link text-3xl font-medium">Contact</a></li>
+        </ul>
+    </div>
+
+    <main class="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+
+        <!-- Home Section -->
+        <section id="home" class="min-h-screen flex items-center content-section">
+            <div class="max-w-4xl">
+                <h1 class="text-5xl md:text-7xl lg:text-8xl font-extrabold tracking-tighter text-white leading-tight mb-4">
+                    Ansh Thakur
+                </h1>
+                <h2 class="animated-gradient-text text-2xl md:text-3xl font-semibold mb-8">
+                    Cloud & Security Student | Startup Founder
+                </h2>
+                <p class="text-lg md:text-xl text-slate-300 mb-10">
+                    Enthusiastic BCA student with a passion for technology, business operations, and leadership. Seeking to apply technical, analytical, and operational skills in a growth-oriented organization.
+                </p>
+                <a href="#portfolio" class="bg-violet-600 hover:bg-violet-700 text-white font-bold py-4 px-10 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/20">
+                    Explore My Work
+                </a>
+            </div>
+        </section>
+
+        <!-- About Section -->
+        <section id="about" class="content-section">
+             <h2 class="text-4xl md:text-5xl font-bold text-white text-center mb-12">About Me</h2>
+            <div class="glass-surface p-8 md:p-12">
+                <h3 class="text-2xl font-bold text-white mb-4">Who I Am</h3>
+                <div class="typewriter-container">
+                    <p class="text-slate-300 mb-4" data-text="I'm a dedicated Bachelor of Computer Applications student at Amity University, specializing in Cloud Computing and Security. My journey is driven by a fascination with how technology can solve real-world problems and a strong entrepreneurial spirit."></p>
+                    <p class="text-slate-300" data-text="Currently, I'm channeling this passion into managing LAYDS, a service-based startup I founded. This experience has been invaluable, teaching me the intricacies of vendor relations, customer service, and operational logistics from the ground up."></p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Skills Section -->
+        <section id="skills" class="content-section">
+            <h2 class="text-4xl md:text-5xl font-bold text-white text-center mb-6">My Arsenal of Skills</h2>
+            <p class="text-center text-slate-400 mb-8">Click and drag the skills!</p>
+            <div id="skills-container">
+                <!-- Falling skills will be injected here by JS -->
+            </div>
+        </section>
+
+        <!-- Portfolio Section -->
+        <section id="portfolio" class="content-section">
+            <h2 class="text-4xl md:text-5xl font-bold text-white text-center mb-12">Ventures & Projects</h2>
+            <div id="rolling-gallery-container">
+                <div id="rolling-gallery">
+                    <!-- Project Cards (Duplicated for seamless loop) -->
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">LAYDS - Labour At Your Door Step</h3><p class="text-slate-300 mb-4">Founder & Operations Lead of a startup providing on-demand labour, construction helpers, and materials with free delivery.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">View Details →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">D&A Construction (Idea)</h3><p class="text-slate-300 mb-4">Conceptualized a platform to save time and money in construction by booking verified labor and purchasing materials.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">Explore Concept →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">Rank Cracker Website</h3><p class="text-slate-300 mb-4">A NEET-focused educational website with quizzes, free books, chat, and a leaderboard.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">Visit Website →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">SHEZAM Food Delivery</h3><p class="text-slate-300 mb-4">A multi-role Indian food delivery platform with AI integration for customers, restaurants, and delivery personnel.</p<a href="#" class="text-violet-400 hover:text-violet-300 font-medium">See The Platform →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">Anonymous Chat Platform</h3><p class="text-slate-300 mb-4">Developed user and admin panels for a real-time anonymous chat application, focusing on privacy and moderation.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">Try The Chat →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">Interactive Periodic Table</h3><p class="text-slate-300 mb-4">An engaging educational site with data and fun facts for all 118 elements.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">Discover Elements →</a></div>
+                    <!-- Duplicates for seamless loop -->
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">LAYDS - Labour At Your Door Step</h3><p class="text-slate-300 mb-4">Founder & Operations Lead of a startup providing on-demand labour, construction helpers, and materials with free delivery.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">View Details →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">D&A Construction (Idea)</h3><p class="text-slate-300 mb-4">Conceptualized a platform to save time and money in construction by booking verified labor and purchasing materials.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">Explore Concept →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">Rank Cracker Website</h3><p class="text-slate-300 mb-4">A NEET-focused educational website with quizzes, free books, chat, and a leaderboard.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">Visit Website →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">SHEZAM Food Delivery</h3><p class="text-slate-300 mb-4">A multi-role Indian food delivery platform with AI integration for customers, restaurants, and delivery personnel.</p<a href="#" class="text-violet-400 hover:text-violet-300 font-medium">See The Platform →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">Anonymous Chat Platform</h3><p class="text-slate-300 mb-4">Developed user and admin panels for a real-time anonymous chat application, focusing on privacy and moderation.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">Try The Chat →</a></div>
+                    <div class="project-card glass-surface p-6"><h3 class="text-xl font-bold text-white mb-2">Interactive Periodic Table</h3><p class="text-slate-300 mb-4">An engaging educational site with data and fun facts for all 118 elements.</p><a href="#" class="text-violet-400 hover:text-violet-300 font-medium">Discover Elements →</a></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Contact Section -->
+        <section id="contact" class="content-section text-center">
+            <h2 class="text-4xl md:text-5xl font-bold text-white mb-4">Let's Connect</h2>
+            <p class="text-slate-300 max-w-2xl mx-auto mb-8">I'm actively looking for new opportunities and collaborations. Feel free to reach out.</p>
+            <a href="mailto:anshthakur@amityonline.com" class="inline-block bg-violet-600 hover:bg-violet-700 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 transform hover:scale-105 shadow-lg shadow-violet-500/20">Say Hello</a>
+        </section>
+
+    </main>
+    
+    <!-- Footer -->
+    <footer class="text-center py-8 border-t border-violet-500/10 relative">
+        <div id="final-boss-container">
+             <h1 id="final-boss-alien" class="text-5xl md:text-7xl font-extrabold tracking-tighter">
+                <span class="animated-gradient-text">SHOOT ME!</span>
+            </h1>
+        </div>
+        <p class="text-slate-400 mt-8">© 2025 Ansh Thakur. All animations coded with passion.</p>
+    </footer>
+
+    <!-- Three.js and GLTF Loader -->
+    <script async src="https://unpkg.com/es-module-shims@1.6.3/dist/es-module-shims.js"></script>
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.module.js",
+            "three/examples/jsm/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@0.128.0/examples/jsm/loaders/GLTFLoader.js"
+        }
+    }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
+
+        // --- Realistic Galaxy Background ---
+        const galaxyScene = new THREE.Scene();
+        const galaxyCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 2000);
+        const galaxyRenderer = new THREE.WebGLRenderer({ canvas: document.getElementById('galaxy-bg-canvas'), antialias: true });
+        galaxyRenderer.setSize(window.innerWidth, window.innerHeight);
+        galaxyCamera.position.z = 10;
+
+        const parameters = {};
+        parameters.count = 20000;
+        parameters.size = 0.02;
+        parameters.radius = 100;
+        parameters.branches = 5;
+        parameters.spin = 1;
+        parameters.randomness = 0.5;
+        parameters.randomnessPower = 3;
+        parameters.insideColor = '#ff6030';
+        parameters.outsideColor = '#1b3984';
+
+        let geometry = null;
+        let material = null;
+        let points = null;
+
+        const generateGalaxy = () => {
+            if (points !== null) {
+                geometry.dispose();
+                material.dispose();
+                galaxyScene.remove(points);
+            }
+
+            geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(parameters.count * 3);
+            const colors = new Float32Array(parameters.count * 3);
+            const colorInside = new THREE.Color(parameters.insideColor);
+            const colorOutside = new THREE.Color(parameters.outsideColor);
+
+            for (let i = 0; i < parameters.count; i++) {
+                const i3 = i * 3;
+                const radius = Math.random() * parameters.radius;
+                const spinAngle = radius * parameters.spin;
+                const branchAngle = (i % parameters.branches) / parameters.branches * Math.PI * 2;
+                
+                const randomX = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+                const randomY = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+                const randomZ = Math.pow(Math.random(), parameters.randomnessPower) * (Math.random() < 0.5 ? 1 : -1) * parameters.randomness * radius;
+
+                positions[i3] = Math.cos(branchAngle + spinAngle) * radius + randomX;
+                positions[i3 + 1] = randomY;
+                positions[i3 + 2] = Math.sin(branchAngle + spinAngle) * radius + randomZ;
+
+                const mixedColor = colorInside.clone();
+                mixedColor.lerp(colorOutside, radius / parameters.radius);
+                colors[i3] = mixedColor.r;
+                colors[i3 + 1] = mixedColor.g;
+                colors[i3 + 2] = mixedColor.b;
+            }
+
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+            material = new THREE.PointsMaterial({
+                size: parameters.size,
+                sizeAttenuation: true,
+                depthWrite: false,
+                blending: THREE.AdditiveBlending,
+                vertexColors: true
+            });
+
+            points = new THREE.Points(geometry, material);
+            galaxyScene.add(points);
+        };
+        generateGalaxy();
+
+
+        // --- Helmet Scene ---
+        const helmetCanvas = document.getElementById('helmet-bg-canvas');
+        const helmetScene = new THREE.Scene();
+        const helmetCamera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const helmetRenderer = new THREE.WebGLRenderer({ canvas: helmetCanvas, antialias: true, alpha: true });
+        helmetRenderer.setSize(window.innerWidth, window.innerHeight);
+        helmetRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        helmetCamera.position.z = 2.5;
+
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+        helmetScene.add(ambientLight);
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 1.5);
+        directionalLight.position.set(8, 5, 5);
+        helmetScene.add(directionalLight);
+        const pointLight = new THREE.PointLight(0xa78bfa, 3, 100);
+        pointLight.position.set(-5, -5, 5);
+        helmetScene.add(pointLight);
+
+        const loader = new GLTFLoader();
+        let loadedModel;
+        loader.load('https://threejs.org/examples/models/gltf/DamagedHelmet/glTF/DamagedHelmet.gltf', (gltf) => {
+            loadedModel = gltf.scene;
+            loadedModel.scale.set(1.5, 1.5, 1.5);
+            loadedModel.position.y = -0.5;
+            helmetScene.add(loadedModel);
+        });
+        
+        const mouse = new THREE.Vector2();
+        document.addEventListener('mousemove', (event) => {
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = - (event.clientY / window.innerHeight) * 2 + 1;
+        });
+
+        let scrollY = window.scrollY;
+        window.addEventListener('scroll', () => scrollY = window.scrollY);
+
+        // --- Typewriter Text Effect ---
+        function typeWriter(element, onComplete) {
+            const text = element.dataset.text;
+            let i = 0;
+            element.innerHTML = '';
+            // Wrap the paragraph content in a span to apply the typing class
+            const span = document.createElement('span');
+            element.appendChild(span);
+            span.classList.add('is-typing');
+
+            function type() {
+                if (i < text.length) {
+                    span.innerHTML += text.charAt(i);
+                    i++;
+                    setTimeout(type, 30); // Typing speed
+                } else {
+                    span.classList.remove('is-typing');
+                    if (onComplete) {
+                        onComplete();
+                    }
+                }
+            }
+            type();
+        }
+
+        const typewriterObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const container = entry.target;
+                    const paragraphs = Array.from(container.querySelectorAll('p[data-text]'));
+                    
+                    function typeNext(index) {
+                        if (index < paragraphs.length) {
+                            typeWriter(paragraphs[index], () => {
+                                // Add a small delay before starting the next paragraph
+                                setTimeout(() => typeNext(index + 1), 200);
+                            });
+                        } else {
+                            // When all are done, add a permanent blinking cursor to the last one
+                            if (paragraphs.length > 0) {
+                                const lastP = paragraphs[paragraphs.length - 1];
+                                const lastSpan = lastP.querySelector('span');
+                                if (lastSpan) {
+                                    lastSpan.classList.add('is-typing');
+                                }
+                            }
+                        }
+                    }
+                    
+                    typeNext(0); // Start typing the first paragraph
+                    typewriterObserver.unobserve(container);
+                }
+            });
+        }, { threshold: 0.5 });
+
+        const typewriterContainer = document.querySelector('.typewriter-container');
+        if (typewriterContainer) {
+            typewriterObserver.observe(typewriterContainer);
+        }
+
+
+        // --- Falling & Draggable Skills ---
+        const skillsContainer = document.getElementById('skills-container');
+        const skills = ["C Programming", "Leadership", "Teamwork", "Entrepreneurship", "Problem Solving", "Effective Communication", "Team Management", "Client Interaction", "Negotiation", "Time Management", "Inventory Management", "Logistics Management"];
+        
+        function createSkill() {
+            if (document.hidden || !skillsContainer) return;
+
+            const skillEl = document.createElement('div');
+            skillEl.classList.add('skill-tag');
+            skillEl.textContent = skills[Math.floor(Math.random() * skills.length)];
+            skillEl.style.left = `${Math.random() * (skillsContainer.offsetWidth - 150)}px`;
+            skillEl.style.animationDuration = `${Math.random() * 10 + 15}s`;
+            skillsContainer.appendChild(skillEl);
+
+            let active = false;
+            let initialX;
+            let initialY;
+
+            // Add listeners for both mouse and touch events
+            skillEl.addEventListener('mousedown', dragStart, false);
+            skillEl.addEventListener('mouseup', dragEnd, false);
+            skillEl.addEventListener('mouseleave', dragEnd, false);
+            skillEl.addEventListener('mousemove', drag, false);
+
+            skillEl.addEventListener('touchstart', dragStart, { passive: false });
+            skillEl.addEventListener('touchend', dragEnd, false);
+            skillEl.addEventListener('touchmove', drag, { passive: false });
+
+            function dragStart(e) {
+                // Get initial mouse/touch position
+                if (e.type === 'touchstart') {
+                    initialX = e.touches[0].clientX;
+                    initialY = e.touches[0].clientY;
+                } else {
+                    initialX = e.clientX;
+                    initialY = e.clientY;
+                }
+
+                // Stop the falling animation and capture its current visual position
+                const computedStyle = window.getComputedStyle(skillEl);
+                const matrix = new DOMMatrix(computedStyle.transform);
+                const currentTranslateY = matrix.m42;
+                const currentTop = skillEl.offsetTop;
+                
+                // Halt the animation and apply the visual position directly via 'top'
+                skillEl.style.animation = 'none';
+                skillEl.style.transform = 'none';
+                skillEl.style.top = (currentTop + currentTranslateY) + 'px';
+
+                active = true;
+                skillEl.style.cursor = 'grabbing';
+                skillEl.style.zIndex = '10'; // Bring the dragged element to the front
+            }
+
+            function dragEnd(e) {
+                active = false;
+                skillEl.style.cursor = 'grab';
+                skillEl.style.zIndex = '1'; // Reset z-index
+            }
+
+            function drag(e) {
+                if (active) {
+                    e.preventDefault();
+
+                    let newX, newY;
+                    if (e.type === 'touchmove') {
+                        newX = e.touches[0].clientX;
+                        newY = e.touches[0].clientY;
+                    } else {
+                        newX = e.clientX;
+                        newY = e.clientY;
+                    }
+                    
+                    // Calculate the change in position
+                    let dx = newX - initialX;
+                    let dy = newY - initialY;
+
+                    // Calculate the new top and left positions
+                    let newTop = skillEl.offsetTop + dy;
+                    let newLeft = skillEl.offsetLeft + dx;
+
+                    // Ensure the skill tag stays within the bounds of its container
+                    const containerRect = skillsContainer.getBoundingClientRect();
+                    if (newLeft < 0) newLeft = 0;
+                    if (newTop < 0) newTop = 0;
+                    if (newLeft > containerRect.width - skillEl.offsetWidth) newLeft = containerRect.width - skillEl.offsetWidth;
+                    if (newTop > containerRect.height - skillEl.offsetHeight) newTop = containerRect.height - skillEl.offsetHeight;
+
+                    skillEl.style.top = newTop + 'px';
+                    skillEl.style.left = newLeft + 'px';
+                    
+                    // Update the initial position for the next movement calculation
+                    initialX = newX;
+                    initialY = newY;
+                }
+            }
+
+            skillEl.addEventListener('animationend', () => {
+                // The animation ends when the skill hits the bottom.
+                // We only remove it if it hasn't been dragged and placed by the user.
+                if (!active) {
+                    skillEl.remove();
+                }
+            });
+        }
+        
+        if (skillsContainer) {
+            setInterval(createSkill, 1500);
+        }
+
+        // --- GLOBAL ALIEN MINIGAME ---
+        const crosshair = document.getElementById('realistic-crosshair');
+        const alienContainer = document.getElementById('alien-container');
+        const finalBossAlien = document.getElementById('final-boss-alien');
+        
+        const alienSVGs = [
+            // Alien 1: Classic
+            `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="#8B5CF6" d="M48.05,27.95C62.9,5.7,92.8,5.7,107.65,27.95C121.1,48.1,114.6,77.2,98.25,87.3C81.9,97.4,54.2,87.3,48.05,67.15C41.9,47,33.2,50.2,48.05,27.95Z" transform="translate(-10 10) rotate(-15 50 50)"/><circle cx="45" cy="45" r="5" fill="white"/><circle cx="46" cy="46" r="2" fill="black"/><circle cx="65" cy="45" r="5" fill="white"/><circle cx="66" cy="46" r="2" fill="black"/></svg>`,
+            // Alien 2: Tall & Wobbly
+            `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="#34D399" d="M50 10 C 30 10, 30 40, 50 40 S 70 10, 50 10 Z M 40 40 C 35 50, 35 80, 40 90 L 60 90 C 65 80, 65 50, 60 40 Z" /><circle cx="50" cy="25" r="6" fill="white"><animate attributeName="cy" values="25;22;25" dur="0.5s" repeatCount="indefinite"/></circle><circle cx="50" cy="25" r="3" fill="black"><animate attributeName="cy" values="25;22;25" dur="0.5s" repeatCount="indefinite"/></circle></svg>`,
+            // Alien 3: Wide & Grumpy
+            `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="#F472B6" d="M10 50 C 10 30, 90 30, 90 50 C 90 80, 70 80, 70 60 C 70 40, 30 40, 30 60 C 30 80, 10 80, 10 50Z" /><rect x="40" y="60" width="20" height="3" fill="white" /><circle cx="35" cy="45" r="4" fill="white"/><circle cx="65" cy="45" r="4" fill="white"/><path d="M 33 47 L 37 43" stroke="black" stroke-width="1.5"/><path d="M 63 47 L 67 43" stroke="black" stroke-width="1.5"/></svg>`,
+            // Alien 4: Spiky & Energetic
+            `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><path fill="#FBBF24" d="M50 50 L10 30 L30 10 L50 20 L70 10 L90 30 L80 50 L90 70 L70 90 L50 80 L30 90 L10 70 Z"><animateTransform attributeName="transform" type="rotate" from="0 50 50" to="360 50 50" dur="5s" repeatCount="indefinite"/></path><circle cx="50" cy="50" r="10" fill="white"/><circle cx="50" cy="50" r="5" fill="black"/></svg>`
+        ];
+
+        let aliens = [];
+        const numAliens = 4;
+        let gameMouse = { x: 0, y: 0 };
+        let aliensInitialized = false;
+
+        function initAliens() {
+            if (aliensInitialized) return;
+            aliensInitialized = true;
+
+            for (let i = 0; i < numAliens; i++) {
+                const alienEl = document.createElement('div');
+                alienEl.className = 'alien';
+                alienEl.innerHTML = alienSVGs[i % alienSVGs.length];
+                alienContainer.appendChild(alienEl);
+
+                const alien = {
+                    el: alienEl,
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    vx: (Math.random() - 0.5) * 4,
+                    vy: (Math.random() - 0.5) * 4,
+                    danceAngle: Math.random() * Math.PI * 2,
+                    isShot: false
+                };
+                aliens.push(alien);
+                
+                alienEl.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    if (alien.isShot) return;
+
+                    alien.isShot = true;
+                    alien.el.classList.add('shot');
+                    document.body.classList.add('shake');
+                    
+                    setTimeout(() => {
+                        window.open('https://www.instagram.com/lyricansh?igsh=MXhvOGd3c2Rtc3Y3aA==', '_blank');
+                    }, 200);
+
+                    setTimeout(() => alien.el.remove(), 500);
+                    setTimeout(() => document.body.classList.remove('shake'), 500);
+                });
+            }
+        }
+        
+        function updateAliens() {
+            if (!aliensInitialized) return;
+            
+            aliens.forEach(alien => {
+                if (alien.isShot) return;
+                const dx = alien.x - gameMouse.x;
+                const dy = alien.y - gameMouse.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                const repulsionForce = 200 / (dist < 50 ? 50 : dist);
+                if (dist < 200) {
+                    alien.vx += (dx / dist) * repulsionForce * 0.1;
+                    alien.vy += (dy / dist) * repulsionForce * 0.1;
+                }
+                alien.danceAngle += 0.1;
+                alien.vx += Math.cos(alien.danceAngle) * 0.1;
+                alien.vy += Math.sin(alien.danceAngle) * 0.1;
+                alien.vx *= 0.95;
+                alien.vy *= 0.95;
+                alien.x += alien.vx;
+                alien.y += alien.vy;
+
+                if (alien.x < 0 || alien.x > window.innerWidth - 80) {
+                    alien.vx *= -1;
+                    alien.x = Math.max(0, Math.min(alien.x, window.innerWidth - 80));
+                }
+                if (alien.y < 0 || alien.y > window.innerHeight - 80) {
+                    alien.vy *= -1;
+                    alien.y = Math.max(0, Math.min(alien.y, window.innerHeight - 80));
+                }
+                alien.el.style.transform = `translate(${alien.x}px, ${alien.y}px) rotate(${alien.vx * 5}deg)`;
+            });
+        }
+        
+        document.addEventListener('mousemove', e => {
+            gameMouse.x = e.clientX;
+            gameMouse.y = e.clientY;
+            crosshair.style.left = `${e.clientX}px`;
+            crosshair.style.top = `${e.clientY}px`;
+        });
+        
+        document.addEventListener('mousedown', () => {
+            crosshair.style.transform = 'translate(-50%, -50%) scale(0.8)';
+        });
+        document.addEventListener('mouseup', () => {
+            crosshair.style.transform = 'translate(-50%, -50%) scale(1)';
+        });
+
+        // --- Final Surprise Logic ---
+        const finalSectionObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    // Show the "SHOOT ME" text
+                    finalBossAlien.classList.add('show');
+                    // Unleash the alien swarm
+                    initAliens();
+                }
+            });
+        }, { threshold: 0.5 });
+
+        finalSectionObserver.observe(document.querySelector('footer'));
+
+        finalBossAlien.addEventListener('click', () => {
+            if (finalBossAlien.classList.contains('shot')) return;
+            finalBossAlien.classList.add('shot');
+            document.body.classList.add('shake');
+            setTimeout(() => {
+                window.open('https://www.instagram.com/lyricansh?igsh=MXhvOGd3c2Rtc3Y3aA==', '_blank');
+            }, 300);
+            setTimeout(() => document.body.classList.remove('shake'), 500);
+        });
+
+
+        // --- Animation Loop ---
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const elapsedTime = clock.getElapsedTime();
+
+            if(points) points.rotation.y = elapsedTime * 0.05;
+            galaxyRenderer.render(galaxyScene, galaxyCamera);
+
+            if (loadedModel) {
+                const targetQuaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(-mouse.y * 0.2, mouse.x * 0.2, 0, 'XYZ'));
+                loadedModel.quaternion.slerp(targetQuaternion, 0.1);
+                loadedModel.position.y = -0.5 - (scrollY / window.innerHeight * 2);
+            }
+            helmetRenderer.render(helmetScene, helmetCamera);
+
+            updateAliens();
+        }
+        
+        animate();
+
+
+        // --- Window Resize ---
+        window.addEventListener('resize', () => {
+            const width = window.innerWidth;
+            const height = window.innerHeight;
+            
+            helmetCamera.aspect = width / height;
+            helmetCamera.updateProjectionMatrix();
+            helmetRenderer.setSize(width, height);
+            helmetRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            galaxyCamera.aspect = width / height;
+            galaxyCamera.updateProjectionMatrix();
+            galaxyRenderer.setSize(width, height);
+            
+            // Re-initialize aliens if they were already active
+            if (aliensInitialized) {
+                aliensInitialized = false; // Reset flag to allow re-initialization
+                aliens = []; // Clear old aliens
+                alienContainer.innerHTML = ''; // Clear old SVGs
+                initAliens();
+            }
+        });
+
+        // --- Mobile Menu ---
+        const mobileMenuButton = document.getElementById('mobile-menu-button');
+        const mobileMenu = document.getElementById('mobile-menu');
+        mobileMenuButton.addEventListener('click', () => mobileMenu.classList.toggle('hidden'));
+        mobileMenu.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', () => mobileMenu.classList.add('hidden'));
+        });
+
+        // --- Loading Screen Logic ---
+        const loaderWrapper = document.getElementById('loader-wrapper');
+        const spaceship = document.getElementById('spaceship');
+        const starfield = document.querySelector('.starfield');
+        const minLoadingTime = 4000; // 4 seconds
+
+        // Create stars for the loader background
+        for (let i = 0; i < 100; i++) {
+            const star = document.createElement('div');
+            star.className = 'star';
+            const size = Math.random() * 3 + 1;
+            star.style.width = `${size}px`;
+            star.style.height = `${size}px`;
+            star.style.left = `${Math.random() * 100}%`;
+            star.style.top = `${Math.random() * 100}%`;
+            star.style.animationDuration = `${Math.random() * 2 + 1}s`;
+            star.style.animationDelay = `${Math.random()}s`;
+            starfield.appendChild(star);
+        }
+
+        // Hide scrollbars and set cursor to default during load
+        document.body.style.overflow = 'hidden';
+        document.body.style.cursor = 'default';
+
+        const hideLoader = () => {
+            if (loaderWrapper && spaceship) {
+                spaceship.classList.add('exit');
+                
+                setTimeout(() => {
+                    loaderWrapper.classList.add('hidden');
+                    
+                    // Restore custom cursor and scrolling
+                    document.body.style.overflow = '';
+                    document.body.style.cursor = 'none';
+
+                    // Remove the loader from the DOM after the animation completes
+                    setTimeout(() => {
+                        if (loaderWrapper.parentNode) {
+                            loaderWrapper.parentNode.removeChild(loaderWrapper);
+                        }
+                    }, 1000); // Matches the opacity transition
+                }, 500); // Wait for the exit animation to start
+            }
+        };
+
+        // Set a timeout for the minimum loading time
+        setTimeout(hideLoader, minLoadingTime);
+
+    </script>
+</body>
+</html>
